@@ -6,7 +6,7 @@ import (
 )
 
 func (sql *SqlStore) CreateItem(ctx context.Context, data *model.TodoItemCreate) error {
-	if err := sql.db.Create(&data).Error; err != nil {
+	if err := sql.db.Create(data).Error; err != nil {
 		return err
 	}
 	return nil

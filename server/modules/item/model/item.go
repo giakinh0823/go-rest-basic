@@ -7,6 +7,7 @@ import (
 
 var (
 	ErrTitleIsBlank = errors.New("title can't be blank")
+	ErrItemNotFound = errors.New("không tìm thấy thông tin item")
 )
 
 type TodoItem struct {
