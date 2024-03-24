@@ -10,9 +10,9 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"server/common"
 	"strconv"
 	"strings"
-	"time"
 )
 
 type ItemStatus int
@@ -84,29 +84,11 @@ func parseStrToItemStatus(s string) (ItemStatus, error) {
 	return ItemStatus(0), errors.New(fmt.Sprintf("Invalid  status string"))
 }
 
-type Paging struct {
-	Page  int   `json:"page" form:"page"`
-	Limit int   `json:"limit" form:"limit"`
-	Total int64 `json:"total" form:"-"`
-}
-
-func (p *Paging) Process() {
-	if p.Page <= 0 {
-		p.Page = 1
-	}
-
-	if p.Limit <= 0 || p.Limit >= 100 {
-		p.Limit = 10
-	}
-}
-
 type TodoItem struct {
-	Id          int         `json:"id" gorm:"column:id;"`
+	common.SQLModel
 	Title       string      `json:"title" gorm:"column:title;"`
 	Description string      `json:"description" gorm:"column:description;"`
 	Status      *ItemStatus `json:"status" gorm:"column:status;"`
-	CreatedAt   *time.Time  `json:"created_at" gorm:"column:created_at;"`
-	UpdatedAt   *time.Time  `json:"updated_at" gorm:"column:updated_at;"`
 }
 
 func (TodoItem) TableName() string {
@@ -160,7 +142,7 @@ func main() {
 
 func ListItem(db *gorm.DB) func(c *gin.Context) {
 	return func(c *gin.Context) {
-		var paging Paging
+		var paging common.Paging
 		if err := c.ShouldBind(&paging); err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{
 				"error": err.Error(),
@@ -192,10 +174,7 @@ func ListItem(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data": result,
-			"page": paging,
-		})
+		c.JSON(http.StatusOK, common.NewSuccessRes(result, paging, nil))
 	}
 }
 
@@ -217,9 +196,7 @@ func GetItem(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data": data,
-		})
+		c.JSON(http.StatusOK, common.SimpleSuccessRes(data))
 	}
 }
 
@@ -240,9 +217,7 @@ func CreateItem(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data": data.Id,
-		})
+		c.JSON(http.StatusOK, common.SimpleSuccessRes(data.Id))
 	}
 }
 
@@ -271,9 +246,7 @@ func UpdateItem(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data": true,
-		})
+		c.JSON(http.StatusOK, common.SimpleSuccessRes(true))
 	}
 }
 
@@ -296,8 +269,6 @@ func DeleteItem(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 
-		c.JSON(http.StatusOK, gin.H{
-			"data": true,
-		})
+		c.JSON(http.StatusOK, common.SimpleSuccessRes(true))
 	}
 }
