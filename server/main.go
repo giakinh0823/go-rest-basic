@@ -1,11 +1,14 @@
 package main
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 	"log"
+	"net/http"
 	"os"
+	"server/common"
 	"server/middleware"
 	ginitem "server/modules/item/transport/gin"
 )
@@ -31,6 +34,18 @@ func main() {
 			items.DELETE("/:id", ginitem.DeleteItem(db))
 		}
 	}
+
+	r.GET("/ping", func(context *gin.Context) {
+		go func() {
+			defer common.Recovery()
+
+			fmt.Println([]int{}[0])
+		}()
+
+		context.JSON(http.StatusOK, gin.H{
+			"message": "pong",
+		})
+	})
 
 	_ = r.Run()
 }
