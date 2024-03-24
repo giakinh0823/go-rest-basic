@@ -2,6 +2,7 @@ package biz
 
 import (
 	"context"
+	"server/common"
 	"server/modules/item/model"
 )
 
@@ -21,7 +22,7 @@ func (biz *GetItemBiz) GetItemById(ctx context.Context, id int) (*model.TodoItem
 	data, err := biz.storage.GetItem(ctx, map[string]interface{}{"id": id})
 
 	if err != nil {
-		return nil, err
+		return nil, common.ErrorCannotGetEntity(model.ENTITY_NAME, err)
 	}
 
 	return data, nil

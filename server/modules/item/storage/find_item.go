@@ -2,6 +2,9 @@ package storage
 
 import (
 	"context"
+	"errors"
+	"gorm.io/gorm"
+	"server/common"
 	"server/modules/item/model"
 )
 
@@ -10,7 +13,10 @@ func (sql *SqlStore) GetItem(ctx context.Context, cond map[string]interface{}) (
 
 	err := sql.db.Where(cond).First(&data).Error
 	if err != nil {
-		return nil, err
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, err
+		}
+		return nil, common.ErrorDB(err)
 	}
 
 	return &data, nil

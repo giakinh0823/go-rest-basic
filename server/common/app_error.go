@@ -78,3 +78,7 @@ func ErrInternal(err error) *AppError {
 func ErrorCannotCreateEntity(entity string, err error) *AppError {
 	return NewCustomError(err, fmt.Sprintf("Cannot create %s", strings.ToLower(entity)), fmt.Sprintf("ErrorCannotCreate%s", entity))
 }
+
+func ErrorCannotGetEntity(entity string, err error) *AppError {
+	return NewCustomError(err, fmt.Sprintf("Can not get record %s", strings.ToLower(entity)), fmt.Sprintf("ErrorCanNotGetRecord%s", entity))
+}
