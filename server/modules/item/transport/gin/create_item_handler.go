@@ -26,6 +26,7 @@ func CreateItem(db *gorm.DB) func(c *gin.Context) {
 		business := biz.NewCreateItemBiz(store)
 
 		if err := business.CreateNewItem(c.Request.Context(), &data); err != nil {
+			c.JSON(http.StatusBadRequest, err)
 			return
 		}
 
