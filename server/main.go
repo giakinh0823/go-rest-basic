@@ -6,6 +6,7 @@ import (
 	"gorm.io/gorm"
 	"log"
 	"os"
+	"server/middleware"
 	ginitem "server/modules/item/transport/gin"
 )
 
@@ -18,6 +19,7 @@ func main() {
 	}
 
 	r := gin.Default()
+	r.Use(middleware.Recovery())
 	v1 := r.Group("/v1")
 	{
 		items := v1.Group("/items")
