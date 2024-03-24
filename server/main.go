@@ -1,6 +1,9 @@
 package main
 
 import (
+	"database/sql/driver"
+	"errors"
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -8,8 +11,78 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
+
+type ItemStatus int
+
+const (
+	DOING ItemStatus = iota
+	DONE
+	DELETED
+)
+
+var ITEM_STATUS = [3]string{"DOING", "DONE", "DELETED"}
+
+func (item *ItemStatus) String() string {
+	return ITEM_STATUS[*item]
+}
+
+func (item *ItemStatus) MarshalJSON() ([]byte, error) {
+	if item == nil {
+		return nil, nil
+	}
+	return []byte(fmt.Sprintf("\"%s\"", item.String())), nil
+}
+
+func (item *ItemStatus) UnmarshalJSON(data []byte) error {
+	str := strings.ReplaceAll(string(data), "\"", "")
+
+	val, err := parseStrToItemStatus(str)
+
+	if err != nil {
+		return err
+	}
+
+	*item = val
+
+	return nil
+}
+
+func (item *ItemStatus) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprintf("fail to  scan data from sql: %s", value))
+	}
+
+	val, err := parseStrToItemStatus(string(bytes))
+
+	if err != nil {
+		return errors.New(fmt.Sprintf("fail to  scan data from sql: %s", value))
+	}
+
+	*item = val
+
+	return nil
+}
+
+func (item *ItemStatus) Value() (driver.Value, error) {
+	if item == nil {
+		return nil, nil
+	}
+
+	return item.String(), nil
+}
+
+func parseStrToItemStatus(s string) (ItemStatus, error) {
+	for i := range ITEM_STATUS {
+		if ITEM_STATUS[i] == s {
+			return ItemStatus(i), nil
+		}
+	}
+	return ItemStatus(0), errors.New(fmt.Sprintf("Invalid  status string"))
+}
 
 type Paging struct {
 	Page  int   `json:"page" form:"page"`
@@ -28,12 +101,12 @@ func (p *Paging) Process() {
 }
 
 type TodoItem struct {
-	Id          int        `json:"id" gorm:"column:id;"`
-	Title       string     `json:"title" gorm:"column:title;"`
-	Description string     `json:"description" gorm:"column:description;"`
-	Status      string     `json:"status" gorm:"column:status;"`
-	CreatedAt   *time.Time `json:"created_at" gorm:"column:created_at;"`
-	UpdatedAt   *time.Time `json:"updated_at" gorm:"column:updated_at;"`
+	Id          int         `json:"id" gorm:"column:id;"`
+	Title       string      `json:"title" gorm:"column:title;"`
+	Description string      `json:"description" gorm:"column:description;"`
+	Status      *ItemStatus `json:"status" gorm:"column:status;"`
+	CreatedAt   *time.Time  `json:"created_at" gorm:"column:created_at;"`
+	UpdatedAt   *time.Time  `json:"updated_at" gorm:"column:updated_at;"`
 }
 
 func (TodoItem) TableName() string {
@@ -41,9 +114,10 @@ func (TodoItem) TableName() string {
 }
 
 type TodoItemCreate struct {
-	Id          int    `json:"-" gorm:"column:id;"`
-	Title       string `json:"title" gorm:"column:title;"`
-	Description string `json:"description" gorm:"column:description;"`
+	Id          int         `json:"-" gorm:"column:id;"`
+	Title       string      `json:"title" gorm:"column:title;"`
+	Status      *ItemStatus `json:"status" gorm:"column:status;"`
+	Description string      `json:"description" gorm:"column:description;"`
 }
 
 func (TodoItemCreate) TableName() string {
@@ -51,9 +125,9 @@ func (TodoItemCreate) TableName() string {
 }
 
 type TodoItemUpdate struct {
-	Title       *string `json:"title" gorm:"column:title;"`
-	Description *string `json:"description" gorm:"column:description;"`
-	Status      *string `json:"status" gorm:"column:status;"`
+	Title       *string     `json:"title" gorm:"column:title;"`
+	Description *string     `json:"description" gorm:"column:description;"`
+	Status      *ItemStatus `json:"status" gorm:"column:status;"`
 }
 
 func (TodoItemUpdate) TableName() string {
